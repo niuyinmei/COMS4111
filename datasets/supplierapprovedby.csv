@@ -1,0 +1,11 @@
+invoiceid,invoicedate,goodname,managerid,supplierid,suppliername
+0000000001,2018-08-01,Table,2,1,Pritchett's Furniture
+0000000002,2018-08-05,Table,2,2,Best Furniture
+0000000003,2018-08-10,Bed,7,1,Pritchett's Furniture
+0000000004,2018-09-01,Bed,2,1,Pritchett's Furniture
+0000000005,2018-09-01,ChairSet,7,2,Best Furniture
+0000000006,2018-09-15,ChairSet,2,2,Best Furniture
+0000000007,2018-09-15,Closet,7,1,Pritchett's Furniture
+0000000008,2018-09-20,Sofa,2,1,Pritchett's Furniture
+0000000009,2018-10-01,Sofa,7,1,Pritchett's Furniture
+0000000010,2018-10-01,Sofa,7,2,Best Furniture
