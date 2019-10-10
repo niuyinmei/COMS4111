@@ -1,10 +1,11 @@
-'000001','April','shiwb328de2','cashier',
-'000002','Mila','suewioqhq32','manager',
-'000003','Evans','287hdyhxap9','tallyman',
-'000004','Spencer','92ydcnskqo31','tallyman',
-'000005','Dave','287yhdjqaikq1','cashier',
-'000006','Debbie','29109shuwza','cashier',
-'000007','Felicia','qpwiwo2901','manager',
-'000008','Larry','poei3q0398a','tallyman',
-'000009','Tom','03294idqji3478','tallyman',
-'000010','Karl','vbuesyg83564t','cashier',
+employid, employname, employpswd, employpos
+000001,April,shiwb328de2,cashier
+000002,Mila,suewioqhq32,manager
+000003,Evans,287hdyhxap9,tallyman
+000004,Spencer,92ydcnskqo31,tallyman
+000005,Dave,287yhdjqaikq1,cashier
+000006,Debbie,29109shuwza,cashier
+000007,Felicia,qpwiwo2901,manager
+000008,Larry,poei3q0398a,tallyman
+000009,Tom,03294idqji3478,tallyman
+000010,Karl,vbuesyg83564t,cashier
