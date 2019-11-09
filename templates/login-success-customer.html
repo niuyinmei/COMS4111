@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+    <h1>Hi, {{ current_user.id }}!</h1>
     <div>
         {% for n in data %}
         <div>{{n}}</div>

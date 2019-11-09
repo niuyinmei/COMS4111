@@ -2,15 +2,24 @@ import os
 from sqlalchemy import *
 from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response, url_for, flash
+from flask_login import login_user, logout_user, current_user, login_required, LoginManager
 import click
 from forms import LoginForm
 import os
-
+from model import User, Customer, Employee
 
 dburl = "postgresql://nm3150:0611@34.74.165.156/proj1part2"
 
 tmpl_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=tmpl_dir)
+
+login = LoginManager(app)
+login.login_view = 'login'
+@login.user_loader
+def load_user(user_id):
+    return User(user_id)
+
+
 SECRET_KEY = os.urandom(32)
 app.config['SECRET_KEY'] = SECRET_KEY
 engine = create_engine(dburl)
@@ -60,6 +69,8 @@ def index():
         else:
             cursor.close()
             flash('success')
+            current_user = User(temp_usrname)
+            login_user(current_user)
             next_page = url_for('login_success_' + temp_id)
             return redirect(next_page)
 
@@ -69,11 +80,15 @@ def index():
 def login_success_customer():
     context = dict()
     names = []
-    cursor = conn.execute('select cname from customer')
+
+    cursor = conn.execute('select * from customer where cid = \'' + current_user.id + '\'')
     for result in cursor:
         names.append(result['cname'])
+        # customer = Customer(current_user.id, result['cname'].strip(), )
     cursor.close()
     context['data'] = names
+    customer = Customer
+    context['current_user'] = current_user
     return render_template('login-success-customer.html', **context)
 
 @app.route('/login_success_employee', methods = ['GET', 'POST'])
