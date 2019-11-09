@@ -23,7 +23,7 @@
             <span style="color: red;">[{{ error }}]</span>
             {% endfor %}
         </p>
-        <p>{{ form.remember_me() }} {{ form.remember_me.label }}</p>
+        <p>{{ form.identity.label }}{{ form.identity }}</p>
         <p>{{ form.submit() }}</p>
     </form>
     <p>New User? <a href="/index">Click to Register!</a></p>

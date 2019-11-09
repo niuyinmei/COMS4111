@@ -38,29 +38,35 @@ def index():
     if form.validate_on_submit():
         temp_usrname = form.username.data
         temp_pswd = form.password.data
-        cursor = conn.execute('select cpswd from customer where cid = ' + '\'' + temp_usrname + '\'')
+        temp_id = form.identity.data
+        temp_id_pswd = ''
+        if temp_id == 'customer':
+            temp_id_pswd = 'c'
+        if temp_id == 'employee':
+            temp_id_pswd = 'employ'
+        cursor = conn.execute('select ' + temp_id_pswd + 'pswd from ' + temp_id + ' where ' + temp_id_pswd + 'id = ' + '\'' + temp_usrname + '\'')
         pswd = ""
         for result in cursor:
-            pswd = str(result['cpswd']).strip()
-        print(len(pswd))
-        print(temp_pswd)
-        print(pswd == temp_pswd)
+            if temp_id == 'customer':
+                pswd = str(result['cpswd']).strip()
+            if temp_id == 'employee':
+                pswd = str(result['employpswd']).strip()
         if pswd != temp_pswd:
             flash('invalid')
             print("here")
+            print(form.identity.data)
             next_page = url_for('index')
             return redirect(next_page)
         else:
             cursor.close()
             flash('success')
-            print("here123")
-            next_page = url_for('login_success')
+            next_page = url_for('login_success_' + temp_id)
             return redirect(next_page)
 
     return render_template('index.html', **context)
 
-@app.route('/login_success', methods = ['GET', 'POST'])
-def login_success():
+@app.route('/login_success_customer', methods = ['GET', 'POST'])
+def login_success_customer():
     context = dict()
     names = []
     cursor = conn.execute('select cname from customer')
@@ -68,7 +74,18 @@ def login_success():
         names.append(result['cname'])
     cursor.close()
     context['data'] = names
-    return render_template('login-success.html', **context)
+    return render_template('login-success-customer.html', **context)
+
+@app.route('/login_success_employee', methods = ['GET', 'POST'])
+def login_success_employee():
+    context = dict()
+    names = []
+    cursor = conn.execute('select employname from employee')
+    for result in cursor:
+        names.append(result['employname'])
+    cursor.close()
+    context['data'] = names
+    return render_template('login-success-employee.html', **context)
 
 if __name__ == "__main__":
     app.run(debug = true, port=8111)
