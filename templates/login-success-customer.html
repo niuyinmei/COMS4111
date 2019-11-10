@@ -1,10 +1,81 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Hi, {{ current_user.id }}!</h1>
-    <div>
-        {% for n in data %}
-        <div>{{n}}</div>
-        {% endfor %}
-    </div>
+<style>
+    table {
+        border-collapse: collapse;
+    }
+    table,th,td {
+        border:1px solid black;
+    }
+        
+    caption { 
+        display: table-caption;
+        text-align: left;
+    }
+</style>
+    <h1>Have a nice day, {{ cname }}!</h1>
+    <table>
+        <caption>Your Information:</caption>
+        <thead><tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Address</th>
+        </tr></thead>
+        <tbody>
+        <tr>
+            <td>{{ id }}</td>
+            <td>{{ cname }}</td>
+            <td>{{ caddr }}</td>
+        </tr>
+        </tbody>
+    </table>
+    <br></br>
+    <table>
+        <caption>Your Membership:</caption>
+        <thead><tr>
+            <th>Membership ID</th>
+            <th>Membership Level</th>
+            <th>Current Balance</th>
+            <th>Expiration</th>
+        </tr></thead>
+        <tbody>
+        <tr>
+            <td>{{ mid }}</td>
+            <td>{{ mlvl }}</td>
+            <td>{{ mbalance }}</td>
+            <td>{{ mexpr }}</td>
+        </tr>
+        </tbody>
+    </table>
+    <br></br>
+    <form action="" method="post" novalidate>
+        <caption>Check what you've bought:</caption>
+        {{ form1.hidden_tag() }}
+        <p>
+        <td>{{form1.start_date.label}}</td>
+        <td>{{form1.start_date(type="date")}}</td>
+        <td>            </td> 
+        <td>{{form1.end_date.label}}</td>
+        <td>{{form1.end_date(type="date")}}</td>
+        <td>{{ form1.submit() }}</td>
+        </p>  
+    </form>
+    <table>
+        <thead>
+            {%- for column in columns %}
+                <th>{{ column }}</th>
+            {%- endfor %}
+        </thead>
+           
+        <tbody>
+        <tr>
+            {%- for row in items %}
+                {%- for col in row %}
+                    <td>{{ col }}</td>
+                {%- endfor %}
+            {%- endfor %}
+        </tr>
+        </tbody>
+    </table>
 {% endblock %}

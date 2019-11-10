@@ -4,7 +4,7 @@ from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required, LoginManager
 import click
-from forms import LoginForm
+from forms import LoginForm, CustomerForm1, CustomerTable1
 import os
 from model import User, Customer, Employee
 
@@ -79,16 +79,40 @@ def index():
 @app.route('/login_success_customer', methods = ['GET', 'POST'])
 def login_success_customer():
     context = dict()
-    names = []
-
+    # load basic information
     cursor = conn.execute('select * from customer where cid = \'' + current_user.id + '\'')
+    context['id'] = current_user.id
     for result in cursor:
-        names.append(result['cname'])
-        # customer = Customer(current_user.id, result['cname'].strip(), )
+        context['cname'] = result['cname'].strip()
+        context['mid'] = result['mid'].strip()
+        context['caddr'] = result['caddr'].strip()
     cursor.close()
-    context['data'] = names
-    customer = Customer
-    context['current_user'] = current_user
+    # load membership information
+    cursor1 = conn.execute('select * from membership where mid = \'' + context['mid'] + '\'')
+    for result1 in cursor1:
+        context['mlvl'] = result1['mlvl'].strip()
+        context['mexpr'] = result1['mexpr']
+        context['mbalance'] = result1['mbalance']
+    cursor1.close()
+    
+    form1 = CustomerForm1()
+    context['form1'] = form1
+
+    # load billing information
+    
+    context['columns'] = ('Bill ID', 'Amount', 'Quantity', 'Cashier', 'Date', 'Payment')
+    cursor2 = conn.execute('select billid, billpaid, quantity, employid, billdate, billpmnt from bill where cid = \'' + context['id'] + '\'')
+    item = []
+    for result2 in cursor2:
+        item.append(result2)
+    print(item)
+    context['items'] = item
+    # if form1.validate_on_submit():
+    #     cursor2 = conn.execute('select bid, billpaid, quantity, employid, billdate, billpmnt from bill where cid = \'' + context['id'] + '\'')
+    #     table1 = Table(cursor2)
+    #     context['table'] = table1    
+    #     cursor2.close()
+    cursor2.close()
     return render_template('login-success-customer.html', **context)
 
 @app.route('/login_success_employee', methods = ['GET', 'POST'])

@@ -26,5 +26,15 @@
         <p>{{ form.identity.label }}{{ form.identity }}</p>
         <p>{{ form.submit() }}</p>
     </form>
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+        <ul class="flash">
+        {% for message in messages %}
+        <li>{{ message }}</li>
+        {% endfor %}
+        </ul>
+    {% endif %}
+    {% endwith %}
     <p>New User? <a href="/index">Click to Register!</a></p>
+    <p>Credit to <a href="https://github.com/niuyinmei" target="_blank">Niuyin Mei</a> and Meng Wang</p>
 {% endblock %}

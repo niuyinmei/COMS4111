@@ -5,7 +5,8 @@ class User(UserMixin):
     def __init__(self, id):
         self.id = id
 
-class Customer(User):
+class Customer():
+    name = ''
     def __init__(self, id, name, memebership, addr):
         self.id = id
         self.name = name
