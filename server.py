@@ -4,9 +4,10 @@ from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required, LoginManager
 import click
-from forms import LoginForm, CustomerForm1, CustomerTable1
+from forms import LoginForm, CustomerForm1, CustomerTable1, CashierForm, CashierGoodForm, ManagerForm
 import os
 from model import User, Customer, Employee
+from datetime import date
 
 dburl = "postgresql://nm3150:0611@34.74.165.156/proj1part2"
 
@@ -99,7 +100,7 @@ def login_success_customer():
     context['form1'] = form1
 
     # load billing information
-    
+    # TODO: add date filter
     context['columns'] = ('Bill ID', 'Amount', 'Quantity', 'Cashier', 'Date', 'Payment')
     cursor2 = conn.execute('select billid, billpaid, quantity, employid, billdate, billpmnt from bill where cid = \'' + context['id'] + '\'')
     item = []
@@ -115,15 +116,122 @@ def login_success_customer():
     cursor2.close()
     return render_template('login-success-customer.html', **context)
 
+# global values required for cashier
+global cart
+cart = []
 @app.route('/login_success_employee', methods = ['GET', 'POST'])
 def login_success_employee():
     context = dict()
-    names = []
-    cursor = conn.execute('select employname from employee')
+    # load basic information
+    cursor = conn.execute('select * from employee where employid = \'' + current_user.id + '\'')
+    context['id'] = current_user.id
+
     for result in cursor:
-        names.append(result['employname'])
+        context['employname'] = result['employname'].strip()
+        context['employpos'] = result['employpos'].strip()
     cursor.close()
-    context['data'] = names
+    
+    # load customer part
+    cashierform = CashierForm()
+    context['cashierform'] = cashierform
+    cashiergoodform = CashierGoodForm()
+    context['cashiergoodform'] = cashiergoodform
+    context['cart'] = cart   
+    
+    if cashierform.validate_on_submit():
+        context['cur_cust_id'] = cashierform.customerid.data
+        if cashierform.submit.data == True:
+            cursor = conn.execute('select * from customer where cid = \'' + cashierform.customerid.data + '\'')
+            for result in cursor:
+                # context['cur_cust_id'] = cashierform.customerid.data
+                context['cur_cust_name'] = result['cname'].strip()
+            cursor.close()
+            if 'cur_cust_name' in context.keys() and context['cur_cust_name'] != None:
+                messagefound = 'Found customer: ' + cashierform.customerid.data + '. Now working on ' + context['cur_cust_name'] +'.'
+                context['messagefound'] = messagefound
+                return render_template('login-success-employee.html', **context)
+            else:
+                messagefound = 'Customer not found. Please try again'
+                context['messagefound'] = messagefound
+            
+        elif cashierform.clear.data == True:
+            context['cur_cust_id'] = None
+            context['cur_cust_name'] = None
+            cashierform.customerid.data = ''
+            messagefound = 'Cleared!'
+            context['messagefound'] = messagefound
+        
+        elif cashierform.submit1.data == True:
+            cursor = conn.execute('select * from goods where goodbatch = \'' + cashiergoodform.goodid.data + '\' and storage > ' + cashierform.quantity.data)
+            gprice = None
+            for result in cursor:
+                temp_goodname = ''
+                temp_manufactor = ''
+                gprice = result['gprice']
+                cursor1 = conn.execute('select * from supplierapprovedBy where invoiceid = \'' + result['invoiceid'] + '\'')
+                for result1 in cursor1:
+                    temp_goodname = result1['goodname']
+                    temp_manufactor = result1['suppliername']
+                cursor1.close()
+                cart.append((temp_goodname, temp_manufactor, cashierform.quantity.data, gprice, cashierform.submit1.data))
+        
+        elif cashierform.checkout.data == True:
+            cursor = conn.execute('select billid from bill where billdate = (select max(billdate) from bill)')
+            temp_billid = ''
+            for result in cursor:
+                temp_billid = result['billid']
+            cursor.close()
+            new_billid = int(temp_billid) + 1
+            new_billid = str(new_billid).zfill(10)
+            nowdate = date.today().strftime('%Y-%m-%d')
+            for row in cart:
+                payment = int(row[2]) * float(row[3])
+                billpmnt = 'cash'
+                execution = 'insert into bill values (\'' + new_billid + '\', \'' + nowdate +'\','  + str(payment) +', + ' + str(row[2]) + ', \'' + context['cur_cust_id'] + '\', \'' + current_user.id + '\', \'' + cashiergoodform.goodid.data + '\', \'' + billpmnt + '\')'
+                print(execution)
+                cursor = conn.execute(execution)
+                cursor.close()
+                # TODO: storage - 1
+                # TODO: notify on successful
+                # TODO: option on payment
+    
+    # manager form
+    managerform = ManagerForm()
+    context['managerform'] = managerform
+    worker_list = []
+    cursor = conn.execute('select * from employee where employpos = \'cashier\' or employpos = \'tallyman\'')
+    for result in cursor:
+        managerform.workers.choices.append((result['employid'], result['employname']))
+    cursor.close()
+    supplement = dict()
+    cursor = conn.execute('select * from supplierapprovedBy where managerid = \'' + current_user.id + '\'')
+    for result in cursor:
+        managerform.suppliers.choices.append((result['supplierid'], result['goodname'] + 'from ' + result['suppliername']))
+        if result['suppliername'] not in supplement:
+            supplement[result['suppliername']] = [result['goodname']]
+        else:
+            supplement[result['suppliername']].append(result['goodname'])
+    cursor.close()
+    print(managerform.suppliers.choices)
+    print(supplement)
+    if managerform.validate_on_submit():
+        if managerform.suppliers.data in supplement.keys():
+            managerform.goods.choices = supplement[managerform.suppliers.data]
+    # add to cart part
+    # if cashiergoodform.validate_on_submit():
+    #     print(cart)
+    #     print("here")
+    #     cursor = conn.execute('select * from goods where goodbatch = \'' + cashiergoodform.goodid.data + '\' and storage > ' + cashiergoodform.quantity.data)
+    #     for result in cursor:
+    #         temp_goodname = ''
+    #         temp_manufactor = ''
+    #         cursor1 = conn.execute('select * from supplierapprovedBy where invoiceid = \'' + result['invoiceid'] + '\'')
+    #         for result1 in cursor1:
+    #             temp_goodname = result1['goodname']
+    #             temp_manufactor = result1['suppliername']
+    #         cursor1.close()
+    #         cart.append(('dsa'))
+    #     return render_template('login-success-employee.html', **context)
     return render_template('login-success-employee.html', **context)
 
 if __name__ == "__main__":

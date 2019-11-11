@@ -1,9 +1,100 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div>
-        {% for n in data %}
-        <div>{{n}}</div>
-        {% endfor %}
+<style>
+        .collapsible {
+          background-color: #777;
+          color: white;
+          cursor: pointer;
+          padding: 18px;
+          border: none;
+          text-align: left;
+          outline: none;
+          font-size: 15px;
+          width: 60%
+        }
+        
+        .active, .collapsible:hover {
+          background-color: #555;
+          width: 60%
+        }
+        
+        .content {
+          padding: 0 18px;
+          overflow: hidden;
+          background-color: #f1f1f1;
+          width: 60%
+        }
+</style>
+    <button type="button" class="collapsible">Customer Service:</button>
+    <div class="content">
+        {% if employpos == 'cashier' %}
+            <form action="" method=post novalidate>
+                {{ cashierform.hidden_tag() }}
+                <p>
+                    <td>{{cashierform.customerid.label}}</td>
+                    <td>{{cashierform.customerid}}</td>
+                    <td>            </td> 
+                    <td>{{cashierform.submit()}}</td>
+                    <td>{{cashierform.clear()}}</td>
+                </p>
+                <span>{{ messagefound }}</span>
+                {% if cur_cust_id %}
+                    <p>
+                        <td>{{cashierform.goodid.label}}</td>
+                        <td>{{cashierform.goodid}}</td>
+                        <td>            </td> 
+                        <td>{{cashierform.quantity.label}}</td>
+                        <td>{{cashierform.quantity(type = "number")}}</td>
+                        <td>{{cashierform.submit1()}}</td>
+                        <td>{{cashierform.checkout()}}</td>
+                    </p>
+                    <table >      
+                        <tbody>
+                            {%- for row in cart %}
+                                <tr>
+                                {%- for col in row %}
+                                    <td>{{ col }}</td>
+                                {%- endfor %}
+                                </tr>
+                            {%- endfor %}
+                        </tbody>
+                    </table>
+                    <!-- <span>{{ messagefound }}</span>  -->  
+            {% endif%}   
+            </form>
+        {% else %}
+            <p>You are not authorized to operate this.</p>
+        {% endif %}
     </div>
+    <br></br>  
+    <button type="button" class="collapsible">Management:</button>
+    <div class="content">
+        {% if employpos == 'manager' %}
+            <form action="" method=post novalidate>
+              <p>{{ managerform.workers.label }}{{ managerform.workers }}</p>
+              <p>{{ managerform.suppliers.label }}{{ managerform.suppliers }}</p>
+              <p>{{ managerform.goods.label }}{{ managerform.goods }}</p>
+            </form>
+        {% else %}
+            <p>You are not authorized to operate this.</p>
+        {% endif %}
+    </div>
+
+    <script>
+            var coll = document.getElementsByClassName("collapsible");
+            var i;
+            
+            for (i = 0; i < coll.length; i++) {
+              coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                  content.style.display = "none";
+                } else {
+                  content.style.display = "block";
+                }
+              });
+            }
+    </script>
 {% endblock %}

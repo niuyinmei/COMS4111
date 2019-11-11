@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, DateField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, DateField, FieldList
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
 import datetime
 from flask_table import Table, Col
@@ -22,3 +22,23 @@ class CustomerTable1(Table):
     employid = Col('Cashier')
     billdate = Col('Date')
     billpmnt = Col('Payment')
+
+class CashierForm(FlaskForm):
+    customerid = StringField('Customer ID', validators = [DataRequired()])
+    submit = SubmitField('Check')
+    clear = SubmitField('Clear')
+    goodid = StringField('Item ID')
+    quantity = StringField('Quantity')
+    submit1 = SubmitField('Add to cart')
+    checkout = SubmitField('Checkout')
+
+# a useless form
+class CashierGoodForm(FlaskForm):
+    goodid = StringField('Item ID', validators = [DataRequired()])
+    quantity = StringField('Quantity', validators = [DataRequired()])
+    submit1 = SubmitField('Add to cart')
+
+class ManagerForm(FlaskForm):
+    workers = SelectField('Workers: ', choices=[])
+    suppliers = SelectField('Suppliers: ', validators = [DataRequired()], choices=[('-1', '    ')])
+    goods = SelectField('Items: ', choices=[])
