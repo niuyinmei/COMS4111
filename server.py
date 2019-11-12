@@ -4,7 +4,7 @@ from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required, LoginManager
 import click
-from forms import LoginForm, CustomerForm1, CustomerTable1, CashierForm, CashierGoodForm, ManagerForm
+from forms import LoginForm, CustomerForm1, CustomerTable1, CashierForm, CashierGoodForm, ManagerForm, ManagerForm1, ManagerForm2
 import os
 from model import User, Customer, Employee
 from datetime import date
@@ -41,7 +41,6 @@ def run(debug, threaded, host, port):
 def index():
     context = dict()
     context['title'] = 'Home'
-    context['user'] = {'username': 'Jeff'}
     form = LoginForm()
     context['form'] = form
 
@@ -184,18 +183,37 @@ def login_success_employee():
             new_billid = int(temp_billid) + 1
             new_billid = str(new_billid).zfill(10)
             nowdate = date.today().strftime('%Y-%m-%d')
+            discount = 1
+            # retrieve membership level
+            cursor = conn.execute('select mlvl from membership where cid = \'' + context['cur_cust_id'] + '\'')
+            mlvl = ''
+            for result in cursor:
+                mlvl = result['mlvl'].strip()
+            if mlvl == 'silver':
+                discount = 0.95
+            elif mlbl == 'gold':
+                discount = 0.9
+
             for row in cart:
-                payment = int(row[2]) * float(row[3])
+                payment = int(row[2]) * float(row[3]) * discount
                 billpmnt = 'cash'
+                # update bill
                 execution = 'insert into bill values (\'' + new_billid + '\', \'' + nowdate +'\','  + str(payment) +', + ' + str(row[2]) + ', \'' + context['cur_cust_id'] + '\', \'' + current_user.id + '\', \'' + cashiergoodform.goodid.data + '\', \'' + billpmnt + '\')'
                 print(execution)
                 cursor = conn.execute(execution)
                 cursor.close()
-                # TODO: storage - 1
+                # update storage
+                execution = 'update goods set storage = storage - ' + row[2] + ' where goodbatch = \'' + cashiergoodform.goodid.data + '\''
+                cursor = conn.execute(execution)
+                cursor.close()
+                # update balance in membership
+                execution = 'update membership set mbalance = mbalance + ' + str(payment) + 'where cid = \'' + context['cur_cust_id'] + '\''
+                cursor.execute(execution)
+                cursor.close()
                 # TODO: notify on successful
                 # TODO: option on payment
     
-    # manager form
+    # manager form: fire employee and release
     managerform = ManagerForm()
     context['managerform'] = managerform
     worker_list = []
@@ -206,17 +224,58 @@ def login_success_employee():
     supplement = dict()
     cursor = conn.execute('select * from supplierapprovedBy where managerid = \'' + current_user.id + '\'')
     for result in cursor:
-        managerform.suppliers.choices.append((result['supplierid'], result['goodname'] + 'from ' + result['suppliername']))
+        managerform.suppliers.choices.append((result['invoiceid'], result['goodname'] + 'from ' + result['suppliername']))
         if result['suppliername'] not in supplement:
             supplement[result['suppliername']] = [result['goodname']]
         else:
             supplement[result['suppliername']].append(result['goodname'])
     cursor.close()
-    print(managerform.suppliers.choices)
-    print(supplement)
-    if managerform.validate_on_submit():
-        if managerform.suppliers.data in supplement.keys():
-            managerform.goods.choices = supplement[managerform.suppliers.data]
+    if managerform.check.data == True:
+        print(managerform.suppliers.data)
+        context['invoiceid'] = managerform.suppliers.data
+    if managerform.fire.data == True:
+        value = dict(managerform.workers.choices).get(managerform.workers.data)
+        cursor = conn.execute('delete from employee where employname = \'' + value + '\'')
+        cursor.close()
+        managerform.workers.choices = []
+        cursor = conn.execute('select * from employee where employpos = \'cashier\' or employpos = \'tallyman\'')
+        for result in cursor:
+            managerform.workers.choices.append((result['employid'], result['employname']))
+        cursor.close()
+    if managerform.release.data == True:
+        dict1 = dict(managerform.suppliers.choices)
+        key_list = list(dict1.keys())
+        val_list = list(dict1.values())
+        print(managerform.suppliers.data)
+        cursor = conn.execute('delete from supplierapprovedBy where invoiceid = \'' + managerform.suppliers.data + '\'')
+        cursor.close()
+        managerform.suppliers.choices = []
+        cursor = conn.execute('select * from supplierapprovedBy where managerid = \'' + current_user.id + '\'')
+        for result in cursor:
+            managerform.suppliers.choices.append((result['invoiceid'], result['goodname'] + 'from ' + result['suppliername']))
+        cursor.close()
+        # print(dict1)
+    
+    # insert new supplier
+    managerform1 = ManagerForm1()
+    context['managerform1'] = managerform1
+    if managerform1.validate_on_submit():
+        pass
+    
+    # insert new employee
+    managerform2 = ManagerForm2()
+    context['managerform2'] = managerform2
+    if managerform2.validate_on_submit():
+        cursor = conn.execute('select max(employid) from employee')
+        cur_employid = 0
+        for result in cursor:
+            cur_employid = int(result['max'])
+        new_employid = str(cur_employid + 1).zfill(6)
+        execution = 'insert into employee values(\''+ new_employid+'\',\'' + managerform2.employname.data + '\', \'' + managerform2.identity.data + '\', \'' + managerform2.password.data + '\')'
+        cursor = conn.execute(execution)
+        managerform2.employname.data = ''
+        cursor.close()
+
     # add to cart part
     # if cashiergoodform.validate_on_submit():
     #     print(cart)
@@ -232,6 +291,16 @@ def login_success_employee():
     #         cursor1.close()
     #         cart.append(('dsa'))
     #     return render_template('login-success-employee.html', **context)
+
+    execution = 'select sum(storage), suppliername, supplieremail, goodname from supplierapprovedby join goods on goods.invoiceid = supplierapprovedBy.invoiceid group by suppliername, supplieremail, goodname, tallyid having tallyid = \''+ current_user.id +'\''
+    cursor = conn.execute(execution)
+    tallyman_item = []
+    context['tallyman_item'] = tallyman_item
+    for result in cursor:
+        tallyman_item.append((result['goodname'], result['suppliername'], result['sum'], result['supplieremail']))
+    context['tallyman_item'] = tallyman_item
+    
+
     return render_template('login-success-employee.html', **context)
 
 if __name__ == "__main__":

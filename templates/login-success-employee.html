@@ -26,6 +26,23 @@
           width: 60%
         }
 </style>
+<style>
+    table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+        
+    td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+        
+    tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+</style>
     <button type="button" class="collapsible">Customer Service:</button>
     <div class="content">
         {% if employpos == 'cashier' %}
@@ -68,14 +85,75 @@
         {% endif %}
     </div>
     <br></br>  
-    <button type="button" class="collapsible">Management:</button>
+    <button type="button" class="collapsible"> HR and Supplement Management:</button>
     <div class="content">
         {% if employpos == 'manager' %}
             <form action="" method=post novalidate>
-              <p>{{ managerform.workers.label }}{{ managerform.workers }}</p>
-              <p>{{ managerform.suppliers.label }}{{ managerform.suppliers }}</p>
-              <p>{{ managerform.goods.label }}{{ managerform.goods }}</p>
+              {{ managerform.hidden_tag() }}
+              <p>{{ managerform.workers.label }}{{ managerform.workers }}{{ managerform.fire() }}</p>
+              <p>{{ managerform.suppliers.label }}{{ managerform.suppliers }}{{ managerform.check() }}{{ managerform.release() }}</p>
+              <span>Invoice ID: {{ invoiceid }}</span>
             </form>
+            <!-- <form action="" method=post novalidate>
+                {{ managerform1.hidden_tag() }}
+                <p>
+                  <td>{{managerform1.suppliername.label}}{{managerform1.suppliername}}</td>
+                </p>
+                <p>
+                    <td>{{managerform1.suppliergood.label}}{{managerform1.suppliergood}}</td>
+                </p>
+                <p>
+                    <td>{{managerform1.supplieremail.label}}{{managerform1.supplieremail}}</td>
+                </p>
+                <p>
+                    <td>{{managerform1.submit()}}
+                </p>
+            </form> -->
+            <form action="" method=post novalidates>
+                <caption>Hire a new employer:</caption>
+                {{ managerform2.hidden_tag() }}
+                <p>
+                  <td>{{managerform2.employname.label}}{{managerform2.employname}}</td>
+                </p>
+                <p>
+                    <td>{{managerform2.password.label}}{{managerform2.password}}</td>
+                </p>
+                <p>
+                    <td>{{managerform2.confirm.label}}{{managerform2.confirm}}</td>
+                </p>
+                    <td>{{managerform2.identity.label}}{{managerform2.identity}}</td>
+                </p>
+                <p>
+                    <td>{{managerform2.submit()}}
+                </p>
+            </form>
+        {% else %}
+            <p>You are not authorized to operate this.</p>
+        {% endif %}
+    </div>
+    <br></br>  
+    <button type="button" class="collapsible">Storage Management:</button>
+    <div class="content">
+        {% if employpos == 'tallyman' %}
+        <table > 
+            <thead>
+                <th>Item</th>
+                <th>Supplier</th>
+                <th>Storage</th>
+                <th>Action</th>
+            </thead>
+               
+            <tbody>
+            {%- for row in tallyman_item %}
+            <tr class = 'clickable-row'>
+                    <td>{{row[0]}}</td>
+                    <td>{{row[1]}}</td>
+                    <td>{{row[2]}}</td>
+                    <td>Notify: <a href = "mailto:{{row[3]}}">{{row[3]}}</a></td>
+            </tr>
+            {%- endfor %}
+            </tbody>
+        </table>
         {% else %}
             <p>You are not authorized to operate this.</p>
         {% endif %}

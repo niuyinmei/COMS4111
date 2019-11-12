@@ -2,18 +2,21 @@
 
 {% block content %}
 <style>
-    table {
-        border-collapse: collapse;
-    }
-    table,th,td {
-        border:1px solid black;
-    }
-        
-    caption { 
-        display: table-caption;
-        text-align: left;
-    }
-</style>
+        table {
+            font-family: arial, sans-serif;
+            border-collapse: collapse;
+        }
+            
+        td, th {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+            
+        tr:nth-child(even) {
+            background-color: #dddddd;
+        }
+    </style>
 <style>
     .collapsible {
       background-color: #777;
@@ -39,7 +42,6 @@
     }
     </style>
     <h1>Have a nice day, {{ cname }}!</h1>
-    <h2>Collapsibles</h2>
 
     <!-- <p>A Collapsible:</p>
     <button type="button" class="collapsible">Open Collapsible</button>

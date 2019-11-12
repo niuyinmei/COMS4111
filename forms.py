@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, DateField, FieldList
-from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
+from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, InputRequired
 import datetime
 from flask_table import Table, Col
 
@@ -40,5 +40,26 @@ class CashierGoodForm(FlaskForm):
 
 class ManagerForm(FlaskForm):
     workers = SelectField('Workers: ', choices=[])
-    suppliers = SelectField('Suppliers: ', validators = [DataRequired()], choices=[('-1', '    ')])
+    suppliers = SelectField('Suppliers: ', choices=[])
     goods = SelectField('Items: ', choices=[])
+    fire = SubmitField('Fire')
+    check = SubmitField('Check Invoice')
+    release = SubmitField('Stop supplement')
+
+class ManagerForm1(FlaskForm):
+    suppliername = StringField('Supplier Name', validators = [DataRequired()])
+    suppliergood = StringField('Supplier Item', validators = [DataRequired()])
+    supplieremail = StringField('Supplier Email', validators = [DataRequired()])
+    submit = SubmitField('Add Supplier')
+
+class ManagerForm2(FlaskForm):
+    employname = StringField('Name: ', validators = [DataRequired()])
+    password = PasswordField('New Password: ', [InputRequired(), EqualTo('confirm', message='Passwords must match')])
+    confirm  = PasswordField('Repeat Password: ')
+    identity = SelectField('Identity: ', choices=[('tallyman','Tallyman'),('cashier','Cashier'), ('manager','Manager')])
+    submit = SubmitField('Add Employee')
+
+class TallymanForm(FlaskForm):
+    # goodbatch = StringField('Batch No.: ', validators = [DataRequired()])
+    # invoiceid = SelectField()
+    pass
