@@ -217,16 +217,16 @@ def login_success_employee():
                 # update bill
                 execution = 'insert into bill values (\'' + new_billid + '\', \'' + nowdate +'\','  + str(payment) +', + ' + str(row[2]) + ', \'' + context['cur_cust_id'] + '\', \'' + current_user.id + '\', \'' + cashiergoodform.goodid.data + '\', \'' + billpmnt + '\')'
                 print(execution)
-                # cursor = conn.execute(execution)
-                # cursor.close()
+                cursor = conn.execute(execution)
+                cursor.close()
                 # update storage
                 execution = 'update goods set storage = storage - ' + row[2] + ' where goodbatch = \'' + cashiergoodform.goodid.data + '\''
-                # cursor = conn.execute(execution)
-                # cursor.close()
+                cursor = conn.execute(execution)
+                cursor.close()
                 # update balance in membership
                 execution = 'update membership set mbalance = mbalance + ' + str(payment) + 'where cid = \'' + context['cur_cust_id'] + '\''
-                # cursor.execute(execution)
-                # cursor.close()
+                cursor = conn.execute(execution)
+                cursor.close()
             cart.clear()
             submit_message = "You purchased a total of $" + str(payment/discount) + "and paid with a discount of " + str(discount) + ". Paid in total of " + str(payment) + '.'
             context['submit_message'] = submit_message
@@ -388,4 +388,4 @@ def register_membership():
 
 
 if __name__ == "__main__":
-    app.run(debug = true, port=8111)
+    app.run(debug = true, host = '0.0.0.0',port=8111)
