@@ -11,8 +11,8 @@ class LoginForm(FlaskForm):
     submit = SubmitField('Sign In')
 
 class CustomerForm1(FlaskForm):
-    start_date = DateField('Start from: ', format = '%Y-%m-%d', default = datetime.datetime(2020, 5, 17), validators = [DataRequired()])
-    end_date = DateField('End at: ', format = '%Y-%m-%d',  validators = [DataRequired()])
+    start_date = DateField('Start from: ', format = '%Y-%m-%d', default = datetime.datetime(2018, 1, 1), validators = [DataRequired()])
+    end_date = DateField('End at: ', format = '%Y-%m-%d', default = datetime.date.today(), validators = [DataRequired()])
     submit = SubmitField('Check')
 
 class CustomerTable1(Table):
@@ -63,3 +63,16 @@ class TallymanForm(FlaskForm):
     # goodbatch = StringField('Batch No.: ', validators = [DataRequired()])
     # invoiceid = SelectField()
     pass
+
+class RegisterForm(FlaskForm):
+    username = StringField('Username', validators = [DataRequired()])
+    password = PasswordField('New Password: ', [DataRequired(), EqualTo('confirm', message='Passwords must match')])
+    address = StringField('Address', validators = [DataRequired()])
+    confirm  = PasswordField('Repeat Password: ')
+    submit = SubmitField('Register')
+
+class MembershipForm(FlaskForm):
+    cid = StringField('Customer ID', validators = [DataRequired()])
+    mem_field = SelectField('Level: ', choices=[('silver','Silver'),('gold','Gold')])
+    submit = SubmitField('Register Membership')
+

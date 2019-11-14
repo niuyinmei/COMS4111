@@ -103,13 +103,15 @@
         </thead>
            
         <tbody>
-        <tr class = 'clickable-row'>
+        
             {%- for row in items %}
+            <tr class = 'clickable-row'>
                 {%- for col in row %}
                     <td>{{ col }}</td>
                 {%- endfor %}
+            </tr>
             {%- endfor %}
-        </tr>
+        
         </tbody>
     </table>
     <script>

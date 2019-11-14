@@ -4,7 +4,7 @@ from sqlalchemy.pool import NullPool
 from flask import Flask, request, render_template, g, redirect, Response, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required, LoginManager
 import click
-from forms import LoginForm, CustomerForm1, CustomerTable1, CashierForm, CashierGoodForm, ManagerForm, ManagerForm1, ManagerForm2
+from forms import LoginForm, CustomerForm1, CustomerTable1, CashierForm, CashierGoodForm, ManagerForm, ManagerForm1, ManagerForm2, RegisterForm, MembershipForm
 import os
 from model import User, Customer, Employee
 from datetime import date
@@ -99,20 +99,22 @@ def login_success_customer():
     context['form1'] = form1
 
     # load billing information
-    # TODO: add date filter
-    context['columns'] = ('Bill ID', 'Amount', 'Quantity', 'Cashier', 'Date', 'Payment')
-    cursor2 = conn.execute('select billid, billpaid, quantity, employid, billdate, billpmnt from bill where cid = \'' + context['id'] + '\'')
-    item = []
-    for result2 in cursor2:
-        item.append(result2)
-    print(item)
-    context['items'] = item
-    # if form1.validate_on_submit():
-    #     cursor2 = conn.execute('select bid, billpaid, quantity, employid, billdate, billpmnt from bill where cid = \'' + context['id'] + '\'')
-    #     table1 = Table(cursor2)
-    #     context['table'] = table1    
-    #     cursor2.close()
-    cursor2.close()
+    if form1.validate_on_submit():
+        print(form1.start_date.data)
+
+        context['columns'] = ('Bill ID', 'Amount', 'Quantity', 'Cashier', 'Date', 'Payment')
+        cursor2 = conn.execute('select billid, billpaid, quantity, employid, billdate, billpmnt from bill where cid = \'' + context['id'] + '\' and billdate > \'' + str(form1.start_date.data) + '\' and billdate < \'' + str(form1.end_date.data) + '\'')
+        item = []
+        for result2 in cursor2:
+            item.append(result2)
+        print(item)
+        context['items'] = item
+        # if form1.validate_on_submit():
+        #     cursor2 = conn.execute('select bid, billpaid, quantity, employid, billdate, billpmnt from bill where cid = \'' + context['id'] + '\'')
+        #     table1 = Table(cursor2)
+        #     context['table'] = table1    
+        #     cursor2.close()
+        cursor2.close()
     return render_template('login-success-customer.html', **context)
 
 # global values required for cashier
@@ -131,15 +133,17 @@ def login_success_employee():
     cursor.close()
     
     # load customer part
+    # cart = []
     cashierform = CashierForm()
     context['cashierform'] = cashierform
     cashiergoodform = CashierGoodForm()
     context['cashiergoodform'] = cashiergoodform
     context['cart'] = cart   
-    
+    print(context.keys())
     if cashierform.validate_on_submit():
         context['cur_cust_id'] = cashierform.customerid.data
         if cashierform.submit.data == True:
+            cart.clear()
             cursor = conn.execute('select * from customer where cid = \'' + cashierform.customerid.data + '\'')
             for result in cursor:
                 # context['cur_cust_id'] = cashierform.customerid.data
@@ -159,10 +163,15 @@ def login_success_employee():
             cashierform.customerid.data = ''
             messagefound = 'Cleared!'
             context['messagefound'] = messagefound
+            return render_template('login-success-employee.html', **context)
         
         elif cashierform.submit1.data == True:
+            print(context['cur_cust_id'])
+            print(context.keys())
+            # print(context['cart'])
             cursor = conn.execute('select * from goods where goodbatch = \'' + cashiergoodform.goodid.data + '\' and storage > ' + cashierform.quantity.data)
             gprice = None
+            i = 0
             for result in cursor:
                 temp_goodname = ''
                 temp_manufactor = ''
@@ -172,7 +181,15 @@ def login_success_employee():
                     temp_goodname = result1['goodname']
                     temp_manufactor = result1['suppliername']
                 cursor1.close()
-                cart.append((temp_goodname, temp_manufactor, cashierform.quantity.data, gprice, cashierform.submit1.data))
+                cart.append((temp_goodname, temp_manufactor, cashierform.quantity.data, gprice))
+                i = i + 1
+            context['cart'] = cart
+            if i == 0:
+                check_message = "Item does not exist or out of stock"
+            else:
+                check_message = "Successfully added to cart"
+            context['check_message'] = check_message
+            return render_template('login-success-employee.html', **context.copy())
         
         elif cashierform.checkout.data == True:
             cursor = conn.execute('select billid from bill where billdate = (select max(billdate) from bill)')
@@ -200,18 +217,19 @@ def login_success_employee():
                 # update bill
                 execution = 'insert into bill values (\'' + new_billid + '\', \'' + nowdate +'\','  + str(payment) +', + ' + str(row[2]) + ', \'' + context['cur_cust_id'] + '\', \'' + current_user.id + '\', \'' + cashiergoodform.goodid.data + '\', \'' + billpmnt + '\')'
                 print(execution)
-                cursor = conn.execute(execution)
-                cursor.close()
+                # cursor = conn.execute(execution)
+                # cursor.close()
                 # update storage
                 execution = 'update goods set storage = storage - ' + row[2] + ' where goodbatch = \'' + cashiergoodform.goodid.data + '\''
-                cursor = conn.execute(execution)
-                cursor.close()
+                # cursor = conn.execute(execution)
+                # cursor.close()
                 # update balance in membership
                 execution = 'update membership set mbalance = mbalance + ' + str(payment) + 'where cid = \'' + context['cur_cust_id'] + '\''
-                cursor.execute(execution)
-                cursor.close()
-                # TODO: notify on successful
-                # TODO: option on payment
+                # cursor.execute(execution)
+                # cursor.close()
+            cart.clear()
+            submit_message = "You purchased a total of $" + str(payment/discount) + "and paid with a discount of " + str(discount) + ". Paid in total of " + str(payment) + '.'
+            context['submit_message'] = submit_message
     
     # manager form: fire employee and release
     managerform = ManagerForm()
@@ -302,6 +320,72 @@ def login_success_employee():
     
 
     return render_template('login-success-employee.html', **context)
+
+@app.route('/register', methods = ['GET', 'POST'])
+def register_customer():
+    context = dict()
+    registerform = RegisterForm()
+    context['registerform'] = registerform
+    if registerform.validate_on_submit():
+        cursor = conn.execute('select max(cid) from customer')
+        for result in cursor:
+            temp_cid = int(result['max'])
+        new_cid = str(temp_cid + 1).zfill(6)
+        execution = 'insert into customer values(\'' + new_cid + '\', \'' + registerform.username.data + '\',\'' + registerform.password.data + '\',\'' + registerform.address.data + '\',NULL)'
+        cursor = conn.execute(execution)
+        cursor.close()
+        text = 'Successfully Registered. Your ID is ' + new_cid + '.'
+        context['text'] = text
+        registerform.username.data = None
+        registerform.address.data = None
+    return render_template('register.html', **context)
+
+@app.route('/membership', methods = ['GET', 'POST'])
+def register_membership():
+    context = dict()
+    membershipform = MembershipForm()
+    context['membershipform'] = membershipform
+    if membershipform.validate_on_submit():
+        cursor = conn.execute('select * from membership where cid = \'' + membershipform.cid.data + '\'')
+        temp_cid = None
+        temp_lvl = None
+        for result in cursor:
+            temp_cid = result['cid']
+            temp_lvl = result['mlvl']
+        cursor.close()
+        cursor = conn.execute('select * from customer where cid = \'' + membershipform.cid.data + '\'')
+        temp_cid1 = None
+        for result in cursor:
+            temp_cid1 = result['cid']
+        cursor.close()
+        if temp_cid1 == None or temp_cid1 == '000000':
+            message = 'You are not registered as a customer!'
+        elif temp_cid == None and temp_cid1 != None:
+            cursor = conn.execute('select max(mid) from membership')
+            for result in cursor:
+                temp_mid = int(result['max'])
+            new_mid = str(temp_mid + 1).zfill(6)
+            nowdate = date(date.today().year + 1, date.today().month, date.today().day).strftime('%Y-%m-%d')
+            execution = 'insert into membership values(\''+ new_mid + '\',\'' + nowdate + '\', 0, \'' + membershipform.mem_field.data + '\',\'' +  membershipform.cid.data + '\')'
+            cursor = conn.execute(execution)
+            cursor.close()
+
+            cursor = conn.execute('update customer set mid = \'' + new_mid +'\' where cid = \'' + membershipform.cid.data + '\'')
+            cursor.close()
+            
+            message = 'You got a new ' + membershipform.mem_field.data +' membership. Expires at ' + nowdate + '.'
+        elif temp_cid != None and temp_lvl == 'silver' and membershipform.mem_field.data == 'gold':
+            nowdate = date(date.today().year + 1, date.today().month, date.today().day).strftime('%Y-%m-%d')
+            execution = 'update membership set mlvl = \'gold\', mexpr = \''+ nowdate +'\' where cid = \''+ membershipform.cid.data + '\''
+            cursor = conn.execute(execution)
+            cursor.close()
+            message = 'You updated your membership to gold. Expires at ' +  nowdate + '.'
+        else:
+            message = 'You already got a membership. You need to upgrade.'
+        context['message'] = message
+    return render_template('membership.html', **context)
+
+
 
 if __name__ == "__main__":
     app.run(debug = true, port=8111)

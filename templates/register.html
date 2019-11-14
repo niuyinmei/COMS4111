@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Regisiter</h1>
+    <form action="" method="post" novalidate>
+            {{ registerform.hidden_tag() }}
+            <p>
+                {{ registerform.username.label }}<br>
+                {{ registerform.username(size=32) }}<br>
+                {% for error in registerform.username.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ registerform.password.label }}<br>
+                {{ registerform.password(size=32) }}<br>
+                {% for error in registerform.password.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ registerform.confirm.label }}<br>
+                {{ registerform.confirm(size=32) }}<br>
+                {% for error in registerform.password.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>
+                {{ registerform.address.label }}<br>
+                {{ registerform.address(size=20) }}<br>
+                {% for error in registerform.address.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            <p>{{ registerform.submit() }} Do you want to just <a href="/index">log in</a>? Or get a membership?</p>
+            <span>{{ text }}</span>
+            <p></p>
+        </form>
+{% endblock %}

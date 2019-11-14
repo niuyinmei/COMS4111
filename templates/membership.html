@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Regisiter Membership</h1>
+    <form action="" method="post" novalidate>
+            {{ membershipform.hidden_tag() }}
+            <p>
+                {{ membershipform.cid.label }}<br>
+                {{ membershipform.cid }}<br>
+            </p>
+            <p>
+                {{ membershipform.mem_field.label }}<br>
+                {{ membershipform.mem_field }}<br>
+            </p>
+            
+            <p>{{ membershipform.submit() }} </p>
+            <span>{{ message }} Do you want to just <a href="/index">log in</a></span>
+        </form>
+{% endblock %}

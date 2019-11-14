@@ -66,7 +66,9 @@
                         <td>{{cashierform.submit1()}}</td>
                         <td>{{cashierform.checkout()}}</td>
                     </p>
-                    <table >      
+                    <span>{{ check_message}}</span>
+                    <table >   
+                        <caption>Cart: </caption>   
                         <tbody>
                             {%- for row in cart %}
                                 <tr>
@@ -77,7 +79,7 @@
                             {%- endfor %}
                         </tbody>
                     </table>
-                    <!-- <span>{{ messagefound }}</span>  -->  
+                    <span>{{ submit_message}}</span>   
             {% endif%}   
             </form>
         {% else %}
